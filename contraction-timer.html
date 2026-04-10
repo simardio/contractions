@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Contractions">
+<meta name="theme-color" content="#1a1625">
+<title>Contraction Timer</title>
+<link rel="manifest" href='data:application/manifest+json,{"name":"Contraction Timer","short_name":"Contractions","start_url":".","display":"standalone","background_color":"%231a1625","theme_color":"%231a1625","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22%3E%3Crect width=%22192%22 height=%22192%22 rx=%2242%22 fill=%22%231a1625%22/%3E%3Ccircle cx=%2296%22 cy=%2296%22 r=%2256%22 fill=%22none%22 stroke=%22%23e8b4c8%22 stroke-width=%228%22/%3E%3Ccircle cx=%2296%22 cy=%2296%22 r=%228%22 fill=%22%23e8b4c8%22/%3E%3C/svg%3E","sizes":"192x192","type":"image/svg+xml"}]}'>
+<link rel="apple-touch-icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="42" fill="%231a1625"/><circle cx="96" cy="96" r="56" fill="none" stroke="%23e8b4c8" stroke-width="8"/><circle cx="96" cy="96" r="8" fill="%23e8b4c8"/></svg>'>
+<style>
+  :root {
+    --bg: #1a1625;
+    --bg-2: #241e33;
+    --bg-3: #2e2640;
+    --ink: #f5ecf5;
+    --ink-dim: #b8a8c4;
+    --ink-faint: #6b5c7a;
+    --rose: #e8b4c8;
+    --rose-deep: #d48aa6;
+    --amber: #f4c47a;
+    --alert: #ff7a85;
+    --calm: #9fd4b8;
+    --line: rgba(255,255,255,0.06);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(232,180,200,0.08), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(159,212,184,0.05), transparent 60%),
+      var(--bg);
+  }
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 28px;
+    font-weight: 500;
+    font-style: italic;
+    letter-spacing: 0.02em;
+    margin: 0;
+    color: var(--rose);
+  }
+  .subtitle {
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--ink-faint);
+    margin-top: 4px;
+  }
+  .status {
+    margin: 24px 0 12px;
+    padding: 16px 18px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    text-align: center;
+    transition: all 0.4s ease;
+  }
+  .status.calm { border-color: rgba(159,212,184,0.3); }
+  .status.watch { border-color: rgba(244,196,122,0.4); background: rgba(244,196,122,0.06); }
+  .status.go { border-color: rgba(255,122,133,0.5); background: rgba(255,122,133,0.08); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,122,133,0.3); }
+    50% { box-shadow: 0 0 0 12px rgba(255,122,133,0); }
+  }
+  .status-label {
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--ink-faint);
+  }
+  .status-text {
+    font-size: 18px;
+    font-style: italic;
+    margin-top: 6px;
+    line-height: 1.3;
+  }
+  .timer-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+    gap: 16px;
+  }
+  .live-stat {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 14px;
+    color: var(--ink-dim);
+    letter-spacing: 0.05em;
+    text-align: center;
+    min-height: 20px;
+  }
+  .live-stat strong {
+    color: var(--rose);
+    font-weight: 600;
+    font-size: 16px;
+  }
+  .big-button {
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--rose) 0%, var(--rose-deep) 100%);
+    color: var(--bg);
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    box-shadow:
+      0 20px 60px rgba(212,138,166,0.3),
+      inset 0 -8px 20px rgba(0,0,0,0.1),
+      inset 0 8px 20px rgba(255,255,255,0.2);
+    transition: transform 0.15s ease, box-shadow 0.3s ease;
+    position: relative;
+  }
+  .big-button:active { transform: scale(0.96); }
+  .big-button.active {
+    background: linear-gradient(135deg, #ff8a95 0%, #d44a5a 100%);
+    box-shadow:
+      0 20px 60px rgba(255,122,133,0.4),
+      inset 0 -8px 20px rgba(0,0,0,0.15),
+      inset 0 8px 20px rgba(255,255,255,0.15);
+    animation: breathe 3s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+  .button-time {
+    display: block;
+    font-size: 36px;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    letter-spacing: 0;
+    margin-top: 4px;
+    text-transform: none;
+  }
+  section {
+    margin-top: 28px;
+  }
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-title {
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+  .clear-btn {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .clear-btn:active { color: var(--alert); }
+  .history {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .history li {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 14px;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+    font-size: 16px;
+  }
+  .history li:last-child { border-bottom: none; }
+  .h-time { color: var(--ink-dim); font-size: 14px; }
+  .h-dur { color: var(--rose); font-style: italic; }
+  .h-int { color: var(--ink); font-variant-numeric: tabular-nums; min-width: 50px; text-align: right; font-size: 15px; }
+  .h-del {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--ink-faint);
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+    transition: all 0.2s ease;
+  }
+  .h-del:active { background: var(--alert); color: var(--bg); border-color: var(--alert); }
+  .clear-btn.danger { color: var(--alert); }
+  .empty {
+    text-align: center;
+    color: var(--ink-faint);
+    font-style: italic;
+    padding: 20px;
+    font-size: 15px;
+  }
+  .settings {
+    background: var(--bg-2);
+    border-radius: 16px;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+  }
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label {
+    font-size: 16px;
+    color: var(--ink);
+  }
+  .setting-label small {
+    display: block;
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin-top: 2px;
+    font-family: -apple-system, system-ui, sans-serif;
+  }
+  .setting-input {
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 18px;
+    width: 70px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .install-hint {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(232,180,200,0.06);
+    border: 1px dashed rgba(232,180,200,0.2);
+    border-radius: 12px;
+    font-size: 13px;
+    color: var(--ink-dim);
+    text-align: center;
+    font-family: -apple-system, system-ui, sans-serif;
+    line-height: 1.5;
+  }
+  .install-hint b { color: var(--rose); }
+  footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-family: -apple-system, system-ui, sans-serif;
+    letter-spacing: 0.1em;
+    line-height: 1.6;
+  }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1 class="title">Contractions</h1>
+    <div class="subtitle">a quiet little timer</div>
+  </header>
+
+  <div class="status" id="status">
+    <div class="status-label">Status</div>
+    <div class="status-text" id="statusText">Tap the button when a contraction begins</div>
+  </div>
+
+  <div class="timer-area">
+    <div class="live-stat" id="liveStat">&nbsp;</div>
+    <button class="big-button" id="bigBtn">
+      Start
+      <span class="button-time" id="btnTime">contraction</span>
+    </button>
+    <div class="live-stat" id="liveStat2">&nbsp;</div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <h2 class="section-title">History</h2>
+      <button class="clear-btn danger" id="clearBtn">Reset all</button>
+    </div>
+    <ul class="history" id="history"></ul>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2 class="section-title">Settings</h2>
+    </div>
+    <div class="settings">
+      <div class="setting-row">
+        <div class="setting-label">
+          Drive to hospital
+          <small>minutes by car</small>
+        </div>
+        <input type="number" class="setting-input" id="driveTime" min="1" max="120" value="20">
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          First baby
+          <small>affects timing advice</small>
+        </div>
+        <input type="checkbox" id="firstBaby" style="width:24px;height:24px;accent-color:var(--rose);" checked>
+      </div>
+    </div>
+    <div class="install-hint" id="installHint">
+      <b>Add to Home Screen:</b> tap the Share button in Safari, then "Add to Home Screen" — the app will work offline like a real app.
+    </div>
+  </section>
+
+  <footer>
+    Not medical advice. When in doubt, call your provider.
+  </footer>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'contractionTimerData_v1';
+  const SETTINGS_KEY = 'contractionTimerSettings_v1';
+
+  let state = {
+    contractions: [], // {start, end}
+    activeStart: null
+  };
+  let settings = { driveTime: 20, firstBaby: true };
+
+  // Load
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (s) state = s;
+  } catch(e){}
+  try {
+    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+    if (s) settings = Object.assign(settings, s);
+  } catch(e){}
+
+  const $ = id => document.getElementById(id);
+  const bigBtn = $('bigBtn');
+  const btnTime = $('btnTime');
+  const liveStat = $('liveStat');
+  const liveStat2 = $('liveStat2');
+  const historyEl = $('history');
+  const statusEl = $('status');
+  const statusText = $('statusText');
+  const driveInput = $('driveTime');
+  const firstBabyInput = $('firstBaby');
+
+  driveInput.value = settings.driveTime;
+  firstBabyInput.checked = settings.firstBaby;
+
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  function saveSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+
+  function fmtDuration(ms) {
+    const s = Math.floor(ms/1000);
+    const m = Math.floor(s/60);
+    const r = s%60;
+    if (m > 0) return `${m}m ${r.toString().padStart(2,'0')}s`;
+    return `${r}s`;
+  }
+  function fmtInterval(ms) {
+    const s = Math.floor(ms/1000);
+    const m = Math.floor(s/60);
+    const r = s%60;
+    return `${m}:${r.toString().padStart(2,'0')}`;
+  }
+  function fmtClock(ts) {
+    const d = new Date(ts);
+    return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  }
+
+  function toggle() {
+    const now = Date.now();
+    if (state.activeStart) {
+      // End contraction
+      state.contractions.push({ start: state.activeStart, end: now });
+      state.activeStart = null;
+      if (navigator.vibrate) navigator.vibrate(40);
+    } else {
+      state.activeStart = now;
+      if (navigator.vibrate) navigator.vibrate(20);
+    }
+    save();
+    render();
+  }
+  bigBtn.addEventListener('click', toggle);
+
+  $('clearBtn').addEventListener('click', () => {
+    if (!confirm('Reset everything? This will delete ALL contraction history and cannot be undone.')) return;
+    if (!confirm('Are you absolutely sure? Tap Cancel if unsure.')) return;
+    state.contractions = [];
+    state.activeStart = null;
+    save();
+    render();
+  });
+
+  driveInput.addEventListener('change', () => {
+    settings.driveTime = Math.max(1, parseInt(driveInput.value)||20);
+    driveInput.value = settings.driveTime;
+    saveSettings();
+    render();
+  });
+  firstBabyInput.addEventListener('change', () => {
+    settings.firstBaby = firstBabyInput.checked;
+    saveSettings();
+    render();
+  });
+
+  function computeAdvice() {
+    const list = state.contractions;
+    if (list.length < 2) {
+      return { level: 'calm', text: 'Keep timing — patterns will appear after a few contractions.' };
+    }
+
+    // Look at last hour of contractions
+    const oneHourAgo = Date.now() - 60*60*1000;
+    const recent = list.filter(c => c.end > oneHourAgo);
+    if (recent.length < 2) {
+      return { level: 'calm', text: 'Early labor — rest, hydrate, and keep timing.' };
+    }
+
+    // Avg interval (start-to-start) and avg duration over last 6
+    const sample = list.slice(-6);
+    const intervals = [];
+    for (let i=1; i<sample.length; i++) {
+      intervals.push((sample[i].start - sample[i-1].start)/1000/60);
+    }
+    const avgInterval = intervals.reduce((a,b)=>a+b,0)/intervals.length;
+    const avgDuration = sample.reduce((a,c)=>a+(c.end-c.start),0)/sample.length/1000;
+
+    // Drive-time-adjusted threshold
+    // Standard 5-1-1 (first baby) or 3-1-1 (subsequent). Add buffer for drive time.
+    const driveBuffer = settings.driveTime / 10; // every 10 min drive adds 1 min to threshold
+    const baseThreshold = settings.firstBaby ? 5 : 7;
+    const goThreshold = baseThreshold + driveBuffer;
+    const watchThreshold = goThreshold + 3;
+
+    if (avgInterval <= goThreshold && avgDuration >= 45) {
+      return {
+        level: 'go',
+        text: `Time to head to the hospital. Contractions every ${avgInterval.toFixed(1)} min, lasting ~${Math.round(avgDuration)}s.`
+      };
+    }
+    if (avgInterval <= watchThreshold) {
+      return {
+        level: 'watch',
+        text: `Active labor likely. Get ready — contractions every ${avgInterval.toFixed(1)} min. Leave when they reach ${goThreshold.toFixed(0)} min apart.`
+      };
+    }
+    return {
+      level: 'calm',
+      text: `Early labor. Contractions every ${avgInterval.toFixed(1)} min. Rest while you can.`
+    };
+  }
+
+  function render() {
+    const active = !!state.activeStart;
+    bigBtn.classList.toggle('active', active);
+    if (active) {
+      bigBtn.firstChild.textContent = 'Stop';
+    } else {
+      bigBtn.childNodes[0].textContent = 'Start';
+    }
+
+    // History
+    const list = state.contractions.slice().reverse();
+    if (list.length === 0) {
+      historyEl.innerHTML = '<li class="empty">No contractions yet</li>';
+    } else {
+      historyEl.innerHTML = list.map((c, i) => {
+        const dur = c.end - c.start;
+        const chronIdx = state.contractions.length - 1 - i;
+        let interval = '';
+        if (chronIdx > 0) {
+          const prev = state.contractions[chronIdx - 1];
+          interval = fmtInterval(c.start - prev.start);
+        } else {
+          interval = '—';
+        }
+        return `<li>
+          <span class="h-time">${fmtClock(c.start)}</span>
+          <span class="h-dur">${fmtDuration(dur)}</span>
+          <span class="h-int">${interval}</span>
+          <button class="h-del" data-idx="${chronIdx}" aria-label="Delete">×</button>
+        </li>`;
+      }).join('');
+      historyEl.querySelectorAll('.h-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          if (confirm('Delete this contraction?')) {
+            state.contractions.splice(idx, 1);
+            save();
+            render();
+          }
+        });
+      });
+    }
+
+    // Advice
+    const advice = computeAdvice();
+    statusEl.classList.remove('calm','watch','go');
+    statusEl.classList.add(advice.level);
+    statusText.textContent = advice.text;
+  }
+
+  function tick() {
+    if (state.activeStart) {
+      const elapsed = Date.now() - state.activeStart;
+      btnTime.textContent = fmtDuration(elapsed);
+      liveStat.innerHTML = `Contraction in progress`;
+    } else {
+      btnTime.textContent = 'contraction';
+      if (state.contractions.length > 0) {
+        const last = state.contractions[state.contractions.length-1];
+        const since = Date.now() - last.end;
+        liveStat.innerHTML = `Last ended <strong>${fmtDuration(since)}</strong> ago`;
+      } else {
+        liveStat.innerHTML = '&nbsp;';
+      }
+    }
+
+    // Second line: avg of last few intervals
+    if (state.contractions.length >= 2) {
+      const sample = state.contractions.slice(-5);
+      const intervals = [];
+      for (let i=1; i<sample.length; i++) {
+        intervals.push((sample[i].start - sample[i-1].start)/1000);
+      }
+      const avg = intervals.reduce((a,b)=>a+b,0)/intervals.length;
+      liveStat2.innerHTML = `Avg interval <strong>${fmtInterval(avg*1000)}</strong>`;
+    } else {
+      liveStat2.innerHTML = '&nbsp;';
+    }
+  }
+
+  setInterval(tick, 250);
+  render();
+  tick();
+
+  // Hide install hint if already installed
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+    document.getElementById('installHint').style.display = 'none';
+  }
+})();
+</script>
+</body>
+</html>
