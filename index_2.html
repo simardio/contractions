@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Contractions">
+<meta name="theme-color" content="#1a1625" id="themeColorMeta">
+<title>Contraction Timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+:root {
+  --bg: #1a1625;
+  --bg-2: #241e33;
+  --bg-3: #2e2640;
+  --ink: #f5ecf5;
+  --ink-dim: #b8a8c4;
+  --ink-faint: #6b5c7a;
+  --rose: #e8b4c8;
+  --rose-deep: #d48aa6;
+  --amber: #f4c47a;
+  --alert: #ff7a85;
+  --calm: #9fd4b8;
+  --line: rgba(255,255,255,0.06);
+  --grad-top: rgba(232,180,200,0.08);
+  --grad-bot: rgba(159,212,184,0.05);
+  --font-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+[data-theme="light"] {
+  --bg: #faf7f5;
+  --bg-2: #f0ebe8;
+  --bg-3: #e5ddd9;
+  --ink: #2d1f2d;
+  --ink-dim: #5c4a5c;
+  --ink-faint: #9b89a8;
+  --rose: #c4607a;
+  --rose-deep: #a8405a;
+  --amber: #b8680a;
+  --alert: #d44455;
+  --calm: #2d8a62;
+  --line: rgba(0,0,0,0.08);
+  --grad-top: rgba(196,96,122,0.06);
+  --grad-bot: rgba(45,138,98,0.04);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, var(--grad-top), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, var(--grad-bot), transparent 60%),
+    var(--bg);
+}
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.header-center {
+  text-align: center;
+  flex: 1;
+}
+.header-spacer { width: 80px; }
+.header-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+  width: 80px;
+  justify-content: flex-end;
+}
+.icon-btn {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+}
+.icon-btn:active { background: var(--bg-2); }
+.title {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  margin: 0;
+  color: var(--rose);
+}
+.subtitle {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: var(--ink-faint);
+  margin-top: 4px;
+}
+.status {
+  margin: 24px 0 12px;
+  padding: 16px 18px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  text-align: center;
+  transition: all 0.4s ease;
+}
+.status.calm { border-color: rgba(159,212,184,0.3); }
+.status.watch { border-color: rgba(244,196,122,0.4); background: rgba(244,196,122,0.06); }
+.status.go { border-color: rgba(255,122,133,0.5); background: rgba(255,122,133,0.08); animation: pulse-box 2s ease-in-out infinite; }
+@keyframes pulse-box {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,122,133,0.3); }
+  50% { box-shadow: 0 0 0 12px rgba(255,122,133,0); }
+}
+.status-label {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+}
+.status-text {
+  font-size: 18px;
+  font-style: italic;
+  margin-top: 6px;
+  line-height: 1.3;
+}
+.timer-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0 8px;
+  gap: 16px;
+}
+.live-stat {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  color: var(--ink-dim);
+  letter-spacing: 0.05em;
+  text-align: center;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.live-stat strong {
+  color: var(--rose);
+  font-weight: 600;
+  font-size: 16px;
+}
+.pattern-badge {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+  display: none;
+}
+.pattern-badge.regular  { display: inline-block; background: rgba(159,212,184,0.15); color: var(--calm); }
+.pattern-badge.becoming { display: inline-block; background: rgba(244,196,122,0.15); color: var(--amber); }
+.pattern-badge.irregular{ display: inline-block; background: rgba(107,92,122,0.15);  color: var(--ink-faint); }
+.time-since {
+  text-align: center;
+  margin: 4px 0 12px;
+}
+.time-since-val {
+  font-family: var(--font-serif);
+  font-size: 38px;
+  font-style: italic;
+  color: var(--ink-dim);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.time-since-label {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+.big-button-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.outer-ring {
+  position: absolute;
+  width: 268px; height: 268px;
+  border-radius: 50%;
+  border: 1px solid rgba(232,180,200,0.15);
+  pointer-events: none;
+}
+.outer-ring.breathing {
+  animation: outer-breathe 3s ease-in-out infinite;
+}
+@keyframes outer-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+.ripple-ring {
+  position: absolute;
+  width: 240px; height: 240px;
+  border-radius: 50%;
+  border: 2px solid var(--rose);
+  opacity: 0;
+  pointer-events: none;
+}
+.ripple-ring.animate {
+  animation: ring-expand 0.5s ease-out forwards;
+}
+@keyframes ring-expand {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.45); opacity: 0; }
+}
+.big-button {
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--rose) 0%, var(--rose-deep) 100%);
+  color: var(--bg);
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  box-shadow:
+    0 20px 60px rgba(212,138,166,0.3),
+    inset 0 -8px 20px rgba(0,0,0,0.1),
+    inset 0 8px 20px rgba(255,255,255,0.2);
+  transition: transform 0.15s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.big-button:active { transform: scale(0.96); }
+.big-button.active {
+  background: linear-gradient(135deg, #ff8a95 0%, #d44a5a 100%);
+  box-shadow:
+    0 20px 60px rgba(255,122,133,0.4),
+    inset 0 -8px 20px rgba(0,0,0,0.15),
+    inset 0 8px 20px rgba(255,255,255,0.15);
+  animation: breathe 3s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+.button-label {
+  display: block;
+  pointer-events: none;
+}
+.button-time {
+  display: block;
+  font-size: 34px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  letter-spacing: 0;
+  margin-top: 2px;
+  text-transform: none;
+  pointer-events: none;
+}
+/* Tag selector */
+.tag-selector {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 8px;
+  animation: fade-up 0.3s ease;
+  width: 100%;
+}
+.tag-selector.visible { display: flex; }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.tag-selector-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+}
+.tag-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 4px;
+  width: 100%;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.tag-list::-webkit-scrollbar { display: none; }
+.tag-chip {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.tag-chip.selected, .tag-chip:active {
+  background: var(--rose);
+  border-color: var(--rose);
+  color: var(--bg);
+}
+.tag-skip {
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 8px;
+  text-decoration: underline;
+}
+section { margin-top: 28px; }
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.section-title {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: var(--ink-faint);
+  margin: 0;
+}
+/* Hold-to-reset */
+.hold-reset-btn {
+  background: none;
+  border: none;
+  color: var(--alert);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  padding: 4px 8px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.hold-reset-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--alert);
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 0s;
+  opacity: 0.2;
+  border-radius: 4px;
+}
+.hold-reset-btn.holding::before {
+  transform: scaleX(1);
+  transition: transform 1.5s linear;
+}
+.history {
+  list-style: none;
+  margin: 0; padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.history li {
+  display: grid;
+  grid-template-columns: 20px auto 1fr auto auto auto;
+  gap: 10px;
+  padding: 11px 2px;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  font-size: 15px;
+}
+.history li:last-child { border-bottom: none; }
+.h-num {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-align: right;
+}
+.h-time { color: var(--ink-dim); font-size: 13px; font-family: var(--font-ui); }
+.h-dur { color: var(--rose); font-style: italic; white-space: nowrap; }
+.h-tag {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--ink-faint);
+  border: 1px solid var(--line);
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+.h-tag:empty { display: none; }
+.h-int {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  min-width: 40px;
+  text-align: right;
+  font-size: 13px;
+  font-family: var(--font-ui);
+}
+.h-del {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--ink-faint);
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.h-del:active { background: var(--alert); color: var(--bg); border-color: var(--alert); }
+.empty {
+  text-align: center;
+  color: var(--ink-faint);
+  font-style: italic;
+  padding: 20px;
+  font-size: 15px;
+  list-style: none;
+}
+/* Chart */
+.chart-wrap { margin-top: 28px; display: none; }
+.chart-wrap.visible { display: block; }
+.chart-canvas {
+  width: 100%;
+  height: 140px;
+  border-radius: 12px;
+  display: block;
+}
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  justify-content: center;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+/* Settings */
+.settings {
+  background: var(--bg-2);
+  border-radius: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+}
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 16px; color: var(--ink); }
+.setting-label small {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+  font-family: var(--font-ui);
+}
+.setting-input {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 18px;
+  width: 70px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-align: center;
+}
+.setting-select {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  max-width: 150px;
+  text-align: right;
+}
+.install-hint {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(232,180,200,0.06);
+  border: 1px dashed rgba(232,180,200,0.2);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--ink-dim);
+  text-align: center;
+  font-family: var(--font-ui);
+  line-height: 1.5;
+  display: none;
+}
+.install-hint.visible { display: block; }
+.install-hint b { color: var(--rose); }
+.install-prompt-btn {
+  display: none;
+  margin-top: 10px;
+  padding: 8px 20px;
+  background: var(--rose);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* Toast */
+.toast-container {
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom) + 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+  pointer-events: none;
+  width: calc(100% - 40px);
+  max-width: 440px;
+}
+.toast {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: all;
+  animation: toast-in 0.25s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.toast.out { animation: toast-out 0.25s ease forwards; }
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(12px); }
+}
+.toast-undo {
+  background: var(--rose);
+  color: var(--bg);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-family: var(--font-ui);
+  letter-spacing: 0.1em;
+  line-height: 1.6;
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-spacer"></div>
+    <div class="header-center">
+      <h1 class="title">Contractions</h1>
+      <div class="subtitle">a quiet little timer</div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle light/dark theme">☀</button>
+      <button class="icon-btn" id="shareBtn" aria-label="Share contraction summary">⬆</button>
+    </div>
+  </header>
+
+  <div class="status" id="status" role="status">
+    <div class="status-label">Status</div>
+    <div class="status-text" id="statusText" aria-live="polite">Tap the button when a contraction begins</div>
+  </div>
+
+  <div class="timer-area">
+    <div class="live-stat" id="liveStat" aria-live="polite">
+      <span id="lsText">&nbsp;</span><strong id="lsVal"></strong><span id="lsSuffix"></span>
+    </div>
+
+    <div class="big-button-wrap">
+      <div class="outer-ring" id="outerRing"></div>
+      <div class="ripple-ring" id="rippleRing"></div>
+      <button class="big-button" id="bigBtn" aria-label="Start contraction">
+        <span class="button-label" id="btnLabel">Start</span>
+        <span class="button-time" id="btnTime" role="timer" aria-live="assertive">contraction</span>
+      </button>
+    </div>
+
+    <div class="live-stat" id="liveStat2" aria-live="polite">
+      <span id="ls2Text">&nbsp;</span><strong id="ls2Val"></strong><span class="pattern-badge" id="patternBadge"></span>
+    </div>
+  </div>
+
+  <div class="tag-selector" id="tagSelector">
+    <div class="tag-selector-label">How was it?</div>
+    <div class="tag-list" id="tagList">
+      <button class="tag-chip" data-tag="Intense">Intense</button>
+      <button class="tag-chip" data-tag="Mild">Mild</button>
+      <button class="tag-chip" data-tag="Regular">Regular</button>
+      <button class="tag-chip" data-tag="Irregular">Irregular</button>
+      <button class="tag-chip" data-tag="Pressure">Pressure</button>
+      <button class="tag-chip" data-tag="Back pain">Back pain</button>
+    </div>
+    <button class="tag-skip" id="tagSkip">skip</button>
+  </div>
+
+  <div class="time-since" id="timeSince" style="display:none" aria-live="polite">
+    <div class="time-since-val" id="timeSinceVal">—</div>
+    <div class="time-since-label">since last contraction</div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <h2 class="section-title">History</h2>
+      <button class="hold-reset-btn" id="clearBtn" aria-label="Hold to reset all contractions">Reset all</button>
+    </div>
+    <ul class="history" id="history" aria-label="Contraction history"></ul>
+  </section>
+
+  <div class="chart-wrap" id="chartWrap">
+    <div class="section-head">
+      <h2 class="section-title">Chart</h2>
+    </div>
+    <canvas class="chart-canvas" id="chartCanvas" aria-label="Contraction duration and interval chart"></canvas>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--rose)"></div>Duration (s)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Interval (min)</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <h2 class="section-title">Settings</h2>
+    </div>
+    <div class="settings">
+      <div class="setting-row">
+        <div class="setting-label">
+          Drive to hospital
+          <small>minutes by car</small>
+        </div>
+        <input type="number" class="setting-input" id="driveTime" min="1" max="120" value="20" aria-label="Drive time in minutes">
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          Pregnancy type
+          <small>affects timing rule</small>
+        </div>
+        <select class="setting-select" id="babyType" aria-label="Pregnancy type">
+          <option value="first">First baby (5-1-1)</option>
+          <option value="subsequent">Not first (3-1-1)</option>
+          <option value="vbac">VBAC / High-Risk (4-1-1)</option>
+        </select>
+      </div>
+    </div>
+    <div class="install-hint" id="installHint">
+      <b>Add to Home Screen:</b> tap the Share button in Safari, then "Add to Home Screen" for offline use.
+      <br><button class="install-prompt-btn" id="installBtn">Add to Home Screen</button>
+    </div>
+  </section>
+
+  <footer>Not medical advice. When in doubt, call your provider.</footer>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Storage keys ────────────────────────────────────────────────────────────
+  const STORAGE_KEY  = 'contractionTimerData_v1';
+  const SETTINGS_KEY = 'contractionTimerSettings_v2';
+  const THEME_KEY    = 'contractionTimerTheme_v1';
+  const INSTALL_KEY  = 'contractionTimerInstalled_v1';
+
+  // ── State ───────────────────────────────────────────────────────────────────
+  let state = { contractions: [], activeStart: null };
+  let settings = { driveTime: 20, babyType: 'first' };
+
+  // Load state (schema-compatible: add tag:null for old records)
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (raw && Array.isArray(raw.contractions)) {
+      state = raw;
+      state.contractions = state.contractions.map(c => ({tag: null, ...c}));
+    }
+  } catch (_) {}
+
+  // Load settings (migrate from v1 if needed)
+  try {
+    const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+    if (raw) { Object.assign(settings, raw); }
+    else {
+      const old = JSON.parse(localStorage.getItem('contractionTimerSettings_v1'));
+      if (old) {
+        settings.driveTime = old.driveTime || 20;
+        settings.babyType  = old.firstBaby === false ? 'subsequent' : 'first';
+      }
+    }
+  } catch (_) {}
+
+  // ── Theme ───────────────────────────────────────────────────────────────────
+  let theme = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(theme);
+
+  function applyTheme(t) {
+    theme = t;
+    document.documentElement.setAttribute('data-theme', t);
+    const meta = document.getElementById('themeColorMeta');
+    if (meta) meta.content = t === 'dark' ? '#1a1625' : '#faf7f5';
+    const btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = t === 'dark' ? '☀' : '🌙';
+    localStorage.setItem(THEME_KEY, t);
+  }
+
+  // ── DOM refs ────────────────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const bigBtn       = $('bigBtn');
+  const btnLabel     = $('btnLabel');
+  const btnTime      = $('btnTime');
+  const lsText       = $('lsText');
+  const lsVal        = $('lsVal');
+  const lsSuffix     = $('lsSuffix');
+  const ls2Text      = $('ls2Text');
+  const ls2Val       = $('ls2Val');
+  const patternBadge = $('patternBadge');
+  const historyEl    = $('history');
+  const statusEl     = $('status');
+  const statusText   = $('statusText');
+  const driveInput   = $('driveTime');
+  const babySelect   = $('babyType');
+  const tagSelector  = $('tagSelector');
+  const timeSince    = $('timeSince');
+  const timeSinceVal = $('timeSinceVal');
+  const outerRing    = $('outerRing');
+  const rippleRing   = $('rippleRing');
+  const chartWrap    = $('chartWrap');
+  const chartCanvas  = $('chartCanvas');
+  const toastCont    = $('toastContainer');
+  const clearBtn     = $('clearBtn');
+  const themeBtn     = $('themeBtn');
+  const shareBtn     = $('shareBtn');
+  const installHint  = $('installHint');
+  const installBtn   = $('installBtn');
+
+  driveInput.value  = settings.driveTime;
+  babySelect.value  = settings.babyType;
+
+  // ── Persist ─────────────────────────────────────────────────────────────────
+  function save()         { localStorage.setItem(STORAGE_KEY,  JSON.stringify(state)); }
+  function saveSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+
+  // ── Dirty flags & caches ────────────────────────────────────────────────────
+  let historyDirty = true;
+  let adviceCache  = { key: null, result: null };
+  let pendingTagIdx = -1;
+  let longContractionWarned = false;
+  let lastGoLevel = false;
+
+  function invalidateAdvice() { adviceCache.key = null; }
+
+  // ── Utilities ────────────────────────────────────────────────────────────────
+  function fmtDuration(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return m > 0 ? `${m}m ${String(r).padStart(2,'0')}s` : `${r}s`;
+  }
+  function fmtInterval(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${m}:${String(r).padStart(2,'0')}`;
+  }
+  function fmtClock(ts) {
+    return new Date(ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  }
+  function debounce(fn, ms) {
+    let t;
+    return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  }
+  function stddev(arr) {
+    const mean = arr.reduce((a,b) => a+b, 0) / arr.length;
+    return Math.sqrt(arr.reduce((a,x) => a + (x-mean)**2, 0) / arr.length);
+  }
+  function haptic(pattern) {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────────────────
+  function showToast(msg, opts = {}) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    const span = document.createElement('span');
+    span.textContent = msg;
+    toast.appendChild(span);
+    if (opts.undoFn) {
+      const ub = document.createElement('button');
+      ub.className = 'toast-undo';
+      ub.textContent = 'Undo';
+      ub.addEventListener('click', () => { opts.undoFn(); dismiss(); });
+      toast.appendChild(ub);
+    }
+    toastCont.appendChild(toast);
+    const dur = opts.duration || (opts.undoFn ? 4000 : 2500);
+    const timer = setTimeout(dismiss, dur);
+    function dismiss() {
+      clearTimeout(timer);
+      if (!toast.parentNode) return;
+      toast.classList.add('out');
+      setTimeout(() => toast.remove(), 280);
+    }
+    return { dismiss };
+  }
+
+  // ── Advice (memoized) ────────────────────────────────────────────────────────
+  function computeAdvice() {
+    const key = `${state.contractions.length}|${settings.driveTime}|${settings.babyType}`;
+    if (adviceCache.key === key) return adviceCache.result;
+    const r = _computeAdvice();
+    adviceCache = { key, result: r };
+    return r;
+  }
+
+  function _computeAdvice() {
+    const list = state.contractions;
+    if (list.length < 2)
+      return { level:'calm', text:'Keep timing — patterns will appear after a few contractions.' };
+
+    const oneHourAgo = Date.now() - 3600000;
+    if (list.filter(c => c.end > oneHourAgo).length < 2)
+      return { level:'calm', text:'Early labor — rest, hydrate, and keep timing.' };
+
+    const sample = list.slice(-6);
+    const intervals = [];
+    for (let i = 1; i < sample.length; i++)
+      intervals.push((sample[i].start - sample[i-1].start) / 60000);
+    const avgInterval = intervals.reduce((a,b) => a+b, 0) / intervals.length;
+    const avgDuration = sample.reduce((a,c) => a + (c.end - c.start), 0) / sample.length / 1000;
+
+    // Peak duration trend arrow
+    let trendArrow = '';
+    if (list.length >= 6) {
+      const last3 = list.slice(-3).reduce((a,c) => a + (c.end-c.start), 0) / 3 / 1000;
+      const prev3 = list.slice(-6,-3).reduce((a,c) => a + (c.end-c.start), 0) / 3 / 1000;
+      if (last3 >= prev3 * 1.1) trendArrow = ' ↑';
+    }
+
+    const driveBuffer = settings.driveTime / 10;
+    let baseThreshold;
+    switch (settings.babyType) {
+      case 'subsequent': baseThreshold = 3; break;
+      case 'vbac':       baseThreshold = 4; break;
+      default:           baseThreshold = 5; break;
+    }
+    const goThreshold    = baseThreshold + driveBuffer;
+    const watchThreshold = goThreshold + 3;
+    const ruleStr = {first:'5-1-1', subsequent:'3-1-1', vbac:'4-1-1'}[settings.babyType] || '5-1-1';
+
+    if (avgInterval <= goThreshold && avgDuration >= 60) {
+      return {
+        level: 'go',
+        text: `Time to head to the hospital${trendArrow}. Contractions every ${avgInterval.toFixed(1)} min, lasting ~${Math.round(avgDuration)}s.`
+      };
+    }
+    if (avgInterval <= watchThreshold) {
+      return {
+        level: 'watch',
+        text: `Active labor likely${trendArrow}. Get ready — every ${avgInterval.toFixed(1)} min. Leave at ${goThreshold.toFixed(0)} min apart. (${ruleStr})`
+      };
+    }
+    return {
+      level: 'calm',
+      text: `Early labor${trendArrow}. Contractions every ${avgInterval.toFixed(1)} min. Rest while you can.`
+    };
+  }
+
+  // ── Pattern consistency (CV) ─────────────────────────────────────────────────
+  function computePattern() {
+    const list = state.contractions;
+    if (list.length < 3) return null;
+    const sample = list.slice(-6);
+    if (sample.length < 3) return null;
+    const intervals = [];
+    for (let i = 1; i < sample.length; i++)
+      intervals.push((sample[i].start - sample[i-1].start) / 60000);
+    if (intervals.length < 2) return null;
+    const mean = intervals.reduce((a,b) => a+b, 0) / intervals.length;
+    const cv = stddev(intervals) / mean;
+    if (cv < 0.2)  return { label:'Regular ✓',       cls:'regular' };
+    if (cv <= 0.4) return { label:'Becoming regular', cls:'becoming' };
+    return         { label:'Irregular',               cls:'irregular' };
+  }
+
+  // ── Toggle contraction ───────────────────────────────────────────────────────
+  function toggle() {
+    const now = Date.now();
+    if (state.activeStart) {
+      const elapsed = now - state.activeStart;
+
+      // Too long (> 5 min) — warn once, allow second tap to confirm
+      if (elapsed > 300000 && !longContractionWarned) {
+        longContractionWarned = true;
+        showToast("That seems too long — tap again to confirm");
+        return;
+      }
+      // Too short (< 10s) — discard
+      if (elapsed < 10000) {
+        state.activeStart = null;
+        longContractionWarned = false;
+        save();
+        historyDirty = true;
+        invalidateAdvice();
+        renderAll();
+        showToast("Too short — not recorded");
+        return;
+      }
+
+      state.contractions.push({ start: state.activeStart, end: now, tag: null });
+      pendingTagIdx = state.contractions.length - 1;
+      state.activeStart = null;
+      longContractionWarned = false;
+      haptic([30, 60, 30]);
+      save();
+      historyDirty = true;
+      invalidateAdvice();
+      showTagSelector();
+    } else {
+      state.activeStart = now;
+      longContractionWarned = false;
+      pendingTagIdx = -1;
+      hideTagSelector();
+      haptic([30]);
+      save();
+    }
+
+    // Check for new "go" level
+    const advice = computeAdvice();
+    if (advice.level === 'go' && !lastGoLevel) {
+      setTimeout(() => haptic([50, 100, 50, 100, 50]), 600);
+    }
+    lastGoLevel = advice.level === 'go';
+
+    renderAll();
+
+    // Ripple
+    rippleRing.classList.remove('animate');
+    void rippleRing.offsetWidth;
+    rippleRing.classList.add('animate');
+    setTimeout(() => rippleRing.classList.remove('animate'), 520);
+  }
+
+  bigBtn.addEventListener('click', toggle);
+
+  // ── Tag selector ─────────────────────────────────────────────────────────────
+  function showTagSelector() {
+    tagSelector.classList.add('visible');
+    tagSelector.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('selected'));
+  }
+  function hideTagSelector() { tagSelector.classList.remove('visible'); }
+
+  document.querySelectorAll('.tag-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      if (pendingTagIdx < 0 || pendingTagIdx >= state.contractions.length) return;
+      const wasSelected = chip.classList.contains('selected');
+      tagSelector.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('selected'));
+      state.contractions[pendingTagIdx].tag = wasSelected ? null : chip.dataset.tag;
+      if (!wasSelected) chip.classList.add('selected');
+      save();
+      historyDirty = true;
+      renderHistory();
+    });
+  });
+  $('tagSkip').addEventListener('click', () => { pendingTagIdx = -1; hideTagSelector(); });
+
+  // ── Settings inputs ───────────────────────────────────────────────────────────
+  const onDriveChange = debounce(() => {
+    settings.driveTime = Math.max(1, parseInt(driveInput.value) || 20);
+    driveInput.value = settings.driveTime;
+    saveSettings();
+    invalidateAdvice();
+    renderStatus();
+  }, 300);
+  driveInput.addEventListener('input',  onDriveChange);
+  driveInput.addEventListener('change', onDriveChange);
+
+  babySelect.addEventListener('change', () => {
+    settings.babyType = babySelect.value;
+    saveSettings();
+    invalidateAdvice();
+    renderStatus();
+  });
+
+  // ── Hold-to-reset ─────────────────────────────────────────────────────────────
+  let holdTimer = null;
+  let holdActive = false;
+  clearBtn.addEventListener('pointerdown', () => {
+    clearBtn.classList.add('holding');
+    holdActive = true;
+    holdTimer = setTimeout(() => { if (holdActive) doReset(); }, 1500);
+  });
+  function cancelHold() {
+    clearBtn.classList.remove('holding');
+    holdActive = false;
+    clearTimeout(holdTimer);
+  }
+  clearBtn.addEventListener('pointerup',     cancelHold);
+  clearBtn.addEventListener('pointerleave',  cancelHold);
+  clearBtn.addEventListener('pointercancel', cancelHold);
+
+  function doReset() {
+    cancelHold();
+    if (state.contractions.length === 0 && !state.activeStart) return;
+    const backup = { contractions: state.contractions.map(c => ({...c})), activeStart: state.activeStart };
+    state.contractions = [];
+    state.activeStart  = null;
+    pendingTagIdx = -1;
+    hideTagSelector();
+    save();
+    historyDirty = true;
+    invalidateAdvice();
+    renderAll();
+    showToast('All contractions cleared', {
+      undoFn: () => {
+        state.contractions = backup.contractions;
+        state.activeStart  = backup.activeStart;
+        save();
+        historyDirty = true;
+        invalidateAdvice();
+        renderAll();
+      }
+    });
+  }
+
+  // ── Delete contraction ────────────────────────────────────────────────────────
+  function deleteContraction(idx) {
+    const backup = {...state.contractions[idx]};
+    state.contractions.splice(idx, 1);
+    if (pendingTagIdx === idx) { pendingTagIdx = -1; hideTagSelector(); }
+    else if (pendingTagIdx > idx) { pendingTagIdx--; }
+    save();
+    historyDirty = true;
+    invalidateAdvice();
+    renderAll();
+    showToast('Contraction deleted', {
+      undoFn: () => {
+        state.contractions.splice(idx, 0, backup);
+        save();
+        historyDirty = true;
+        invalidateAdvice();
+        renderAll();
+      }
+    });
+  }
+
+  // ── Render: history ───────────────────────────────────────────────────────────
+  function renderHistory() {
+    if (!historyDirty) return;
+    historyDirty = false;
+
+    historyEl.innerHTML = '';
+    const list = state.contractions.slice().reverse();
+
+    if (list.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = 'No contractions yet';
+      historyEl.appendChild(li);
+      chartWrap.classList.remove('visible');
+      return;
+    }
+
+    list.forEach((c, i) => {
+      const chronIdx = state.contractions.length - 1 - i;
+      const dur = c.end - c.start;
+      const prevContraction = chronIdx > 0 ? state.contractions[chronIdx - 1] : null;
+
+      const li = document.createElement('li');
+
+      const numEl = document.createElement('span');
+      numEl.className = 'h-num';
+      numEl.textContent = chronIdx + 1;
+
+      const timeEl = document.createElement('span');
+      timeEl.className = 'h-time';
+      timeEl.textContent = fmtClock(c.start);
+
+      const durEl = document.createElement('span');
+      durEl.className = 'h-dur';
+      durEl.textContent = fmtDuration(dur);
+
+      const tagEl = document.createElement('span');
+      tagEl.className = 'h-tag';
+      tagEl.textContent = c.tag || '';
+
+      const intEl = document.createElement('span');
+      intEl.className = 'h-int';
+      intEl.textContent = prevContraction ? fmtInterval(c.start - prevContraction.start) : '—';
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'h-del';
+      delBtn.setAttribute('aria-label', 'Delete contraction');
+      delBtn.textContent = '🗑';
+      delBtn.addEventListener('click', () => deleteContraction(chronIdx));
+
+      li.append(numEl, timeEl, durEl, tagEl, intEl, delBtn);
+      historyEl.appendChild(li);
+    });
+
+    if (state.contractions.length >= 3) {
+      chartWrap.classList.add('visible');
+      drawChart();
+    } else {
+      chartWrap.classList.remove('visible');
+    }
+  }
+
+  // ── Render: status ─────────────────────────────────────────────────────────────
+  function renderStatus() {
+    const advice = computeAdvice();
+    statusEl.className = `status ${advice.level}`;
+    statusText.textContent = advice.text;
+  }
+
+  // ── Render: button UI ──────────────────────────────────────────────────────────
+  function renderButtonUI() {
+    const active = !!state.activeStart;
+    bigBtn.classList.toggle('active', active);
+    outerRing.classList.toggle('breathing', active);
+    bigBtn.setAttribute('aria-label', active ? 'Stop contraction' : 'Start contraction');
+    btnLabel.textContent = active ? 'Stop' : 'Start';
+    if (!active) btnTime.textContent = 'contraction';
+  }
+
+  // ── Render: all ────────────────────────────────────────────────────────────────
+  function renderAll() {
+    renderButtonUI();
+    renderHistory();
+    renderStatus();
+    timeSince.style.display = (!state.activeStart && state.contractions.length > 0) ? 'block' : 'none';
+  }
+
+  // ── rAF tick loop (live timer only) ───────────────────────────────────────────
+  let lastTick = 0;
+
+  function rafLoop(ts) {
+    requestAnimationFrame(rafLoop);
+    if (ts - lastTick < 100) return;
+    lastTick = ts;
+    tick();
+  }
+
+  function tick() {
+    if (state.activeStart) {
+      const elapsed = Date.now() - state.activeStart;
+      btnTime.textContent = fmtDuration(elapsed);
+      lsText.textContent  = 'Contraction in progress';
+      lsVal.textContent   = '';
+      lsSuffix.textContent = '';
+      timeSince.style.display = 'none';
+    } else {
+      if (state.contractions.length > 0) {
+        const last = state.contractions[state.contractions.length - 1];
+        const since = Date.now() - last.end;
+        lsText.textContent   = 'Last ended ';
+        lsVal.textContent    = fmtDuration(since);
+        lsSuffix.textContent = ' ago';
+        timeSinceVal.textContent = fmtInterval(since);
+        timeSince.style.display = 'block';
+      } else {
+        lsText.textContent   = '\u00a0';
+        lsVal.textContent    = '';
+        lsSuffix.textContent = '';
+        timeSince.style.display = 'none';
+      }
+    }
+
+    // liveStat2: avg interval + pattern badge
+    if (state.contractions.length >= 2) {
+      const sample = state.contractions.slice(-5);
+      const ivs = [];
+      for (let i = 1; i < sample.length; i++)
+        ivs.push(sample[i].start - sample[i-1].start);
+      const avg = ivs.reduce((a,b) => a+b, 0) / ivs.length;
+      ls2Text.textContent = 'Avg interval ';
+      ls2Val.textContent  = fmtInterval(avg);
+
+      const pat = computePattern();
+      patternBadge.className = 'pattern-badge' + (pat ? ` ${pat.cls}` : '');
+      patternBadge.textContent = pat ? pat.label : '';
+    } else {
+      ls2Text.textContent   = '\u00a0';
+      ls2Val.textContent    = '';
+      patternBadge.className = 'pattern-badge';
+      patternBadge.textContent = '';
+    }
+  }
+
+  // ── Canvas chart ───────────────────────────────────────────────────────────────
+  function roundRect(ctx, x, y, w, h, r) {
+    if (w < 2*r) r = w/2;
+    if (h < 2*r) r = h/2;
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y,   x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x,   y+h, r);
+    ctx.arcTo(x,   y+h, x,   y,   r);
+    ctx.arcTo(x,   y,   x+w, y,   r);
+    ctx.closePath();
+  }
+
+  function drawChart() {
+    if (state.contractions.length < 3) return;
+    const dpr  = window.devicePixelRatio || 1;
+    const rect = chartCanvas.getBoundingClientRect();
+    if (!rect.width) return;
+    chartCanvas.width  = rect.width  * dpr;
+    chartCanvas.height = rect.height * dpr;
+    const ctx = chartCanvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const W  = rect.width, H = rect.height;
+    const P  = { top: 10, right: 8, bottom: 26, left: 34 };
+    const pw = W - P.left - P.right;
+    const ph = H - P.top  - P.bottom;
+
+    const isDark   = document.documentElement.getAttribute('data-theme') !== 'light';
+    const gridClr  = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const textClr  = isDark ? '#6b5c7a' : '#9b89a8';
+    const bgClr    = isDark ? '#241e33' : '#f0ebe8';
+    const roseClr  = isDark ? '#e8b4c8' : '#c4607a';
+    const amberClr = isDark ? '#f4c47a' : '#b8680a';
+
+    ctx.fillStyle = bgClr;
+    roundRect(ctx, 0, 0, W, H, 12);
+    ctx.fill();
+
+    const data      = state.contractions.slice(-10);
+    const N         = data.length;
+    const durations = data.map(c => (c.end - c.start) / 1000);
+    const intervals = [];
+    for (let i = 1; i < N; i++)
+      intervals.push((data[i].start - data[i-1].start) / 60000);
+
+    const maxDur = Math.max(...durations, 30);
+    const maxInt = intervals.length ? Math.max(...intervals, 3) : 3;
+    const slot   = pw / N;
+    const barW   = slot * 0.5;
+
+    // Grid
+    ctx.strokeStyle = gridClr;
+    ctx.lineWidth   = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = P.top + ph - ph * i / 4;
+      ctx.beginPath(); ctx.moveTo(P.left, y); ctx.lineTo(W - P.right, y); ctx.stroke();
+    }
+
+    // Y-axis labels
+    ctx.fillStyle    = textClr;
+    ctx.font         = '9px system-ui, sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) {
+      const y   = P.top + ph - ph * i / 4;
+      const val = Math.round(maxDur * i / 4);
+      ctx.fillText(val + 's', P.left - 3, y);
+    }
+
+    // Bars
+    durations.forEach((d, i) => {
+      const x   = P.left + i * slot + (slot - barW) / 2;
+      const bh  = (d / maxDur) * ph;
+      const y   = P.top + ph - bh;
+      const g   = ctx.createLinearGradient(0, y, 0, y + bh);
+      g.addColorStop(0, roseClr);
+      g.addColorStop(1, roseClr + '44');
+      ctx.fillStyle = g;
+      roundRect(ctx, x, y, barW, bh, 3);
+      ctx.fill();
+    });
+
+    // Interval line
+    if (intervals.length > 0) {
+      ctx.beginPath();
+      ctx.strokeStyle = amberClr;
+      ctx.lineWidth   = 2;
+      ctx.setLineDash([4, 4]);
+      intervals.forEach((iv, i) => {
+        const x = P.left + (i + 1) * slot + slot / 2;
+        const y = P.top + ph - (iv / maxInt) * ph;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+      intervals.forEach((iv, i) => {
+        const x = P.left + (i + 1) * slot + slot / 2;
+        const y = P.top + ph - (iv / maxInt) * ph;
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = amberClr;
+        ctx.fill();
+      });
+    }
+
+    // X-axis labels
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle    = textClr;
+    data.forEach((_, i) => {
+      const x   = P.left + i * slot + slot / 2;
+      const num = state.contractions.length - N + i + 1;
+      ctx.fillText(num, x, P.top + ph + 6);
+    });
+  }
+
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(() => {
+      if (state.contractions.length >= 3) drawChart();
+    }).observe(chartCanvas);
+  }
+
+  // ── Theme toggle ───────────────────────────────────────────────────────────────
+  themeBtn.addEventListener('click', () => {
+    applyTheme(theme === 'dark' ? 'light' : 'dark');
+    if (state.contractions.length >= 3) drawChart();
+  });
+
+  // ── Share ──────────────────────────────────────────────────────────────────────
+  shareBtn.addEventListener('click', () => {
+    const list = state.contractions;
+    if (!list.length) { showToast('No contractions to share yet'); return; }
+    const advice = computeAdvice();
+    let avgInt = '—', avgDur = '—';
+    if (list.length >= 2) {
+      const s   = list.slice(-6);
+      const ivs = [];
+      for (let i = 1; i < s.length; i++) ivs.push(s[i].start - s[i-1].start);
+      avgInt = fmtInterval(ivs.reduce((a,b) => a+b, 0) / ivs.length);
+      avgDur = Math.round(s.reduce((a,c) => a + (c.end-c.start), 0) / s.length / 1000) + 's';
+    }
+    const statusStr = { calm:'Early labor', watch:'Active labor', go:'Time to head in' }[advice.level];
+    const text = `Contractions: ${list.length} recorded. Avg interval: ${avgInt}. Avg duration: ${avgDur}. Status: ${statusStr}. — via Contraction Timer`;
+    if (navigator.share) {
+      navigator.share({ title:'Contraction Summary', text }).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => showToast('Summary copied to clipboard')).catch(() => showToast('Could not copy'));
+    } else {
+      showToast('Sharing not supported on this device');
+    }
+  });
+
+  // ── Keyboard shortcuts ─────────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      toggle();
+    } else if (e.key === 'Escape' && state.activeStart) {
+      e.preventDefault();
+      state.activeStart = null;
+      longContractionWarned = false;
+      save();
+      historyDirty = true;
+      renderAll();
+      showToast('Contraction cancelled');
+    }
+  });
+
+  // ── Install prompt ─────────────────────────────────────────────────────────────
+  let deferredPrompt = null;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (!isStandalone && !localStorage.getItem(INSTALL_KEY)) {
+    installHint.classList.add('visible');
+  }
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!localStorage.getItem(INSTALL_KEY)) {
+      installBtn.style.display = 'inline-block';
+      installHint.classList.add('visible');
+    }
+  });
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      localStorage.setItem(INSTALL_KEY, '1');
+      installHint.style.display = 'none';
+    }
+    deferredPrompt = null;
+  });
+  window.addEventListener('appinstalled', () => {
+    localStorage.setItem(INSTALL_KEY, '1');
+    installHint.style.display = 'none';
+  });
+
+  // ── Service Worker (blob URL, best-effort for single-file app) ────────────────
+  if ('serviceWorker' in navigator) {
+    const SW = `
+const FC = 'contractions-fonts-v1';
+self.addEventListener('install',  () => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+self.addEventListener('fetch', e => {
+  const u = e.request.url;
+  if (u.includes('fonts.googleapis.com') || u.includes('fonts.gstatic.com')) {
+    e.respondWith(caches.open(FC).then(c =>
+      c.match(e.request).then(hit => hit || fetch(e.request).then(r => { c.put(e.request, r.clone()); return r; }))
+    ));
+  }
+});`;
+    try {
+      const blob = new Blob([SW], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    } catch (_) {}
+  }
+
+  // ── Manifest (blob URL) ────────────────────────────────────────────────────────
+  try {
+    const icon192 = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%231a1625'/%3E%3Ccircle cx='96' cy='96' r='56' fill='none' stroke='%23e8b4c8' stroke-width='8'/%3E%3Ccircle cx='96' cy='96' r='8' fill='%23e8b4c8'/%3E%3C/svg%3E";
+    const icon512 = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%231a1625'/%3E%3Ccircle cx='256' cy='256' r='150' fill='none' stroke='%23e8b4c8' stroke-width='20'/%3E%3Ccircle cx='256' cy='256' r='20' fill='%23e8b4c8'/%3E%3C/svg%3E";
+    const manifest = {
+      name: 'Contraction Timer', short_name: 'Contractions',
+      start_url: '.', display: 'standalone', orientation: 'portrait',
+      background_color: '#1a1625', theme_color: '#1a1625',
+      icons: [
+        { src: icon192, sizes: '192x192', type: 'image/svg+xml' },
+        { src: icon512, sizes: '512x512', type: 'image/svg+xml' }
+      ],
+      shortcuts: [{ name: 'New Contraction', short_name: 'Start', url: '.' }]
+    };
+    const mBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    let mLink = document.querySelector('link[rel="manifest"]');
+    if (!mLink) { mLink = document.createElement('link'); mLink.rel = 'manifest'; document.head.appendChild(mLink); }
+    mLink.href = URL.createObjectURL(mBlob);
+  } catch (_) {}
+
+  // ── Init ───────────────────────────────────────────────────────────────────────
+  lastGoLevel = computeAdvice().level === 'go';
+  renderAll();
+  requestAnimationFrame(rafLoop);
+
+})();
+</script>
+</body>
+</html>
+<!--CHANGELOG
+Task 1 — JS Performance & Architecture
+  • Replaced setInterval(tick,250) with requestAnimationFrame loop throttled to 100ms via performance.now() timestamps
+  • tick() touches only live-stat spans (lsText/lsVal/lsSuffix, ls2Text/ls2Val, patternBadge, btnTime, timeSinceVal) — never history or status
+  • renderHistory() is gated by a historyDirty flag; only runs on user actions, not the tick loop
+  • renderStatus() is a separate function called only on state/settings changes
+  • Settings inputs debounced 300ms (driveTime input/change, babyType change)
+  • History rebuilt with document.createElement + textContent — no innerHTML interpolation
+  • computeAdvice() memoized by key "count|driveTime|babyType"; invalidated on state/settings change
+  • performance.now() used for rAF throttle; Date.now() for stored wall-clock timestamps
+
+Task 2 — PWA & Offline
+  • Service Worker registered via Blob URL (caches Google Fonts network-first; best-effort for single-file constraint)
+  • Web App Manifest rebuilt as JSON blob URL with 192×192 and 512×512 SVG icons, portrait orientation, shortcuts array
+  • beforeinstallprompt listener: replaces static hint with dynamic "Add to Home Screen" button; dismisses permanently
+
+Task 3 — UX & Interaction
+  • Haptic patterns: start=[30], end=[30,60,30], go-level-change=[50,100,50,100,50]
+  • Canvas chart: bars=duration(rose gradient), dashed line+dots=interval(amber), dual labels, ResizeObserver responsive
+  • Tag selector (Intense/Mild/Regular/Irregular/Pressure/Back pain) appears after each contraction end; stored in {tag} field
+  • Delete uses trash icon + undo toast (4s window) instead of confirm()
+  • Reset uses 1.5s hold-to-confirm with CSS scaleX fill animation; undo toast after reset
+  • "Time since last" shown as large italic number between timer area and history when idle
+  • Ripple ring expands on button press; outer ring breathes during active contraction (3s cycle)
+
+Task 4 — Clinical Logic
+  • Full 4-1-1 (VBAC/High-Risk) added alongside 5-1-1 (first) and 3-1-1 (subsequent); select replaces checkbox
+  • Pattern CV: <0.2 = "Regular ✓" (green badge), 0.2-0.4 = "Becoming regular" (amber), >0.4 = "Irregular" (faint)
+  • Peak duration trend: ↑ appended to status text when avg of last 3 ≥ 110% of prior 3
+  • Contractions <10s: discarded with "Too short — not recorded" toast; activeStart cleared
+  • Contractions >5min: "That seems too long — tap again to confirm" toast; activeStart kept live; second tap confirms
+
+Task 5 — Accessibility & Polish
+  • role="timer" aria-live="assertive" on btnTime; aria-live="polite" on statusText and liveStat
+  • Dynamic aria-label on bigBtn ("Start contraction" / "Stop contraction")
+  • aria-label on all icon buttons and delete buttons
+  • Space/Enter: toggle (unless input/select focused); Escape: cancel active contraction with toast
+  • preconnect hints for fonts.googleapis.com and fonts.gstatic.com
+  • Cormorant Garamond with --font-serif CSS var including Georgia + Times New Roman system fallbacks
+  • Dark/light mode toggle (header right), warm cream palette in light mode, persisted in localStorage
+  • Share button: Web Share API with clipboard fallback; summary includes count/avg interval/avg duration/status
+-->
